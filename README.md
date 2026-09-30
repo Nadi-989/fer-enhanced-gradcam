@@ -63,7 +63,7 @@ The whole experiment (both datasets, three backbones, all figures) runs from
 `notebooks/colab_run_all.ipynb`. Or step by step:
 
 ```bash
-!git clone https://github.com/<your-username>/fer-enhanced-gradcam.git
+!git clone https://github.com/Nadi-989/fer-enhanced-gradcam.git
 %cd fer-enhanced-gradcam
 !pip install -q -r requirements.txt
 # smoke test on synthetic faces (1-2 minutes)
@@ -132,7 +132,7 @@ scratch, CK+48, 5-fold CV) are in `docs/preliminary_results.md`.
 ```bibtex
 @article{fer_msf_gradcam,
   title   = {Visualizing and Validating Deep Learning Models for Six Basic Facial Emotion Recognition Using Enhanced Grad-CAM in Static Images},
-  author  = {<authors>},
+  author  = {Hussien, Nadia Mahmood and others},
   journal = {<journal>},
   year    = {2026}
 }
