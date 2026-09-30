@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite it as below."
+title: "Visualizing and Validating Deep Learning Models for Six Basic Facial Emotion Recognition Using Enhanced Grad-CAM in Static Images"
+authors:
+  - family-names: Hussien
+    given-names: Nadia Mahmood
+    affiliation: "Department of Computer Science, Mustansiriyah University, Baghdad, Iraq"
+    email: nadia.cs89@uomustansiriyah.edu.iq
+repository-code: "https://github.com/Nadi-989/fer-enhanced-gradcam"
+license: MIT
+keywords:
+  - facial emotion recognition
+  - explainable AI
+  - Grad-CAM
+  - class activation mapping
+  - facial action coding system
