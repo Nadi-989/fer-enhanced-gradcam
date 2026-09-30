@@ -1,0 +1,21 @@
+# CK+ - six basic emotions, subject-independent splits
+data_root: data/ckplus           # output of scripts/prepare_ckplus.py
+classes: [angry, disgust, fear, happy, sad, surprise]
+subject_regex: '^(S\d+)'         # file names start with subject id -> no subject in both train and test
+test_split: 0.2
+val_split: 0.15
+img_size: 112
+arch: resnet18
+pretrained: true
+epochs: 60
+batch_size: 32
+lr: 0.0003
+weight_decay: 0.0001
+label_smoothing: 0.1
+class_weights: true
+patience: 12
+seed: 42
+num_workers: 2
+
+cam_methods: [gradcam, gradcam++, xgradcam, layercam, scorecam, eigencam, gradcam_tta, msf_notta, msf]
+cam_max_images: null

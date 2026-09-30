@@ -1,0 +1,26 @@
+# CK+48 (Kaggle 'ckextended.csv', 48x48) - six basic emotions, 309 images
+#   python scripts/prepare_csv.py --csv ckextended.csv --out data/ckplus48 --pool
+# The set is small, so results are reported with stratified 5-fold cross-validation:
+#   for f in 0 1 2 3 4; do python train.py --config configs/ckplus48.yaml --fold $f; done
+# NOTE: this CSV release has no subject IDs, so folds are not subject-independent
+# (use the official CK+ release + configs/ckplus.yaml for that).
+data_root: data/ckplus48
+classes: [angry, disgust, fear, happy, sad, surprise]
+n_folds: 5
+fold: 0
+val_split: 0.15
+img_size: 112
+arch: resnet18
+pretrained: true
+epochs: 60
+batch_size: 32
+lr: 0.0005
+weight_decay: 0.0001
+label_smoothing: 0.1
+class_weights: true
+patience: 15
+seed: 42
+num_workers: 2
+
+cam_methods: [gradcam, gradcam++, xgradcam, layercam, scorecam, eigencam, gradcam_tta, msf_notta, msf]
+cam_max_images: null
