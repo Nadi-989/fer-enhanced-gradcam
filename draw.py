@@ -1,20 +1,17 @@
-"""Use trained models (best.pt) to classify new face images and draw their explanations.
-
-Training is done once by train.py, which saves best.pt (weights + architecture +
-settings). This script only LOADS those files; it never trains.
+"""STEP 3 - DRAWING ONLY. Loads trained best.pt files and draws the heat maps. No training.
 
 Examples
     # one model
-    python infer.py --models runs/fer2013_resnet18/best.pt --images face.jpg
+    python draw.py --models runs/fer2013_resnet18/best.pt --images face.jpg
 
     # several networks at once (compared side by side, one row per model)
-    python infer.py --models runs/fer2013_resnet18/best.pt runs/ckplus48_vgg16/fold0/best.pt \
-                    runs/ckplus48_efficientnet_b0/fold0/best.pt --images photos/*.jpg
+    python draw.py --models runs/fer2013_resnet18/best.pt runs/ckplus48_vgg16/fold0/best.pt \
+                   runs/ckplus48_efficientnet_b0/fold0/best.pt --images photos/*.jpg
 
     # a folder: every best.pt under it is used
-    python infer.py --models runs --images face.jpg
+    python draw.py --models runs --images face.jpg
 
-Outputs (in --out, default: inference_results/)
+Outputs (in --out, default: drawings/)
     <image>_compare.png   rows = models, columns = input + one map per method
     predictions.csv       image, model, predicted emotion, confidence, top-3
 """
@@ -38,37 +35,8 @@ from PIL import Image
 from src.cams import compute_cams
 from src.data import build_transforms
 from src.face import crop_face
-from src.models import build_model
+from src.runtime import find_checkpoints, load_model
 from src.utils import denormalize, get_device, overlay_cam
-
-
-def find_checkpoints(items: list[str]) -> list[Path]:
-    found = []
-    for it in items:
-        for p in sorted(glob.glob(it)) or [it]:
-            p = Path(p)
-            if p.is_dir():
-                found += sorted(p.rglob("best.pt"))
-            elif p.suffix == ".pt" and p.exists():
-                found.append(p)
-    if not found:
-        raise SystemExit("No best.pt found. Pass a .pt file or a folder that contains one.")
-    return list(dict.fromkeys(found))
-
-
-def load_model(ckpt_path: Path, device):
-    """Rebuild the network named in the checkpoint and load its trained weights."""
-    ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
-    cfg, classes = ckpt["cfg"], ckpt["classes"]
-    model, layers = build_model(cfg["arch"], len(classes), pretrained=False)
-    model.load_state_dict(ckpt["state_dict"])
-    model.to(device).eval()
-    for p in model.parameters():
-        p.requires_grad_(True)  # needed for gradient-based maps
-    name = f"{cfg['arch']} ({Path(cfg.get('data_root', '')).name or ckpt_path.parent.name})"
-    if ckpt_path.parent.name.startswith("fold"):
-        name += f" {ckpt_path.parent.name}"
-    return {"model": model, "layers": layers, "cfg": cfg, "classes": classes, "name": name}
 
 
 def load_face(path: str, crop: bool):
@@ -86,7 +54,7 @@ def main():
     ap.add_argument("--models", nargs="+", required=True, help="best.pt files or folders containing them")
     ap.add_argument("--images", nargs="+", required=True, help="image files (wildcards allowed)")
     ap.add_argument("--methods", nargs="*", default=["gradcam", "scorecam", "msf"])
-    ap.add_argument("--out", default="inference_results")
+    ap.add_argument("--out", default="drawings")
     ap.add_argument("--no_crop", action="store_true", help="images are already cropped faces")
     args = ap.parse_args()
 

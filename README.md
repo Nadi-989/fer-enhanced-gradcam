@@ -15,8 +15,10 @@ validating** their decisions with class-activation maps, including the proposed
 | Models | `src/models.py` | ResNet-18/50, VGG-16-BN, EfficientNet-B0, a small CNN |
 | Explanations | `src/cams.py` | Grad-CAM, Grad-CAM++, XGrad-CAM, Layer-CAM, Score-CAM, Eigen-CAM and **MSF-Grad-CAM** (+ ablations) |
 | Validation | `src/metrics.py`, `src/regions.py` | Deletion/Insertion AUC, Average Drop, Increase in Confidence, **FACS-guided facial-region scores**, randomisation sanity check |
-| Scripts | `train.py`, `evaluate_cam.py`, `sanity_check.py`, `aggregate_cv.py`, `make_figures.py` | Full experimental pipeline |
-| Inference | `infer.py` (several models), `predict.py` (one run) | Load saved `best.pt` files, classify new photos and draw the maps |
+| **Step 1 — train** | `train.py` | Trains once and saves `best.pt` (weights + network + settings) |
+| **Step 2 — test** | `test.py` | Loads `best.pt`: accuracy, F1, confusion matrix on the test split, or predictions for new photos |
+| **Step 3 — draw** | `draw.py` | Loads `best.pt`: heat maps for any photo, several networks side by side |
+| Evaluation & figures | `evaluate_cam.py`, `sanity_check.py`, `aggregate_cv.py`, `make_figures.py` | Explanation metrics, randomisation test, k-fold summary, paper figures |
 
 ## The proposed method: MSF-Grad-CAM
 
@@ -68,7 +70,7 @@ The whole experiment (both datasets, three backbones, all figures) runs from
 %cd fer-enhanced-gradcam
 !pip install -q -r requirements.txt
 # smoke test on synthetic faces (1-2 minutes)
-!python scripts/make_dummy_data.py && python train.py --config configs/dummy.yaml
+!python scripts/make_dummy_data.py && python train.py --config configs/dummy.yaml && python test.py --models runs/dummy_simplecnn/best.pt
 ```
 
 ## Datasets
@@ -96,7 +98,8 @@ python scripts/prepare_ckplus.py --ck_root /path/to/CK+ --out data/ckplus
 
 ```bash
 # 1. FER2013 (official train/test split)
-python train.py --config configs/fer2013.yaml --arch resnet18
+python train.py --config configs/fer2013.yaml --arch resnet18     # step 1: train -> best.pt
+python test.py  --models runs/fer2013_resnet18/best.pt            # step 2: test
 python evaluate_cam.py --run runs/fer2013_resnet18
 python sanity_check.py --run runs/fer2013_resnet18
 python make_figures.py --run runs/fer2013_resnet18 --qualitative --regions --bars
@@ -104,19 +107,21 @@ python make_figures.py --run runs/fer2013_resnet18 --qualitative --regions --bar
 # 2. CK+48 (5-fold cross-validation)
 for f in 0 1 2 3 4; do
   python train.py --config configs/ckplus48.yaml --fold $f
+  python test.py  --models runs/ckplus48_resnet18/fold$f/best.pt
   python evaluate_cam.py --run runs/ckplus48_resnet18/fold$f
 done
 python aggregate_cv.py --runs runs/ckplus48_resnet18/fold*
 
 # 3. Other backbones: --arch vgg16 | efficientnet_b0 | resnet50 | simplecnn
 
-# 4. Use the trained models on new photos (no training; face detected and cropped automatically)
-python infer.py --models runs/fer2013_resnet18/best.pt --images my_photo.jpg
-#    compare several networks at once: pass several best.pt files, or a folder
-python infer.py --models runs --images photos/*.jpg
+# 4. Use the saved models on new photos (no training; the face is detected and cropped)
+python test.py --models runs/fer2013_resnet18/best.pt --images my_photo.jpg   # emotion + confidence
+python draw.py --models runs/fer2013_resnet18/best.pt --images my_photo.jpg   # heat maps
+#    several networks at once: pass several best.pt files, or a folder
+python draw.py --models runs --images photos/*.jpg
 ```
 
-Every run folder contains `test_results.json`, `confusion_matrix.png`,
+Every run folder contains `best.pt`, `test_results.json` (after test.py), `confusion_matrix.png`,
 `training_curves.png`, `cam_summary.md` (the paper table), `cam_summary.csv`,
 `cam_frcr_per_emotion.csv`, `sanity_check.png` and `figures/`.
 

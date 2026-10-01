@@ -1,6 +1,14 @@
-"""Train an emotion classifier on the six basic emotions.
+"""STEP 1 - TRAINING ONLY. Trains a network once and saves it as best.pt.
 
     python train.py --config configs/fer2013.yaml --arch resnet18
+
+Saved in the run folder (runs/<config>_<arch>/):
+    best.pt              trained weights + network name + settings (used by test.py and draw.py)
+    splits.json          which images were train / val / test
+    history.csv          loss and accuracy per epoch
+    training_curves.png  the same, as a plot
+Next:  python test.py --models runs/<run>/best.pt
+       python draw.py --models runs/<run>/best.pt --images face.jpg
 """
 from __future__ import annotations
 
@@ -8,54 +16,16 @@ import argparse
 import time
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
-from sklearn.metrics import (accuracy_score, classification_report, confusion_matrix,
-                             f1_score)
+from sklearn.metrics import accuracy_score, f1_score
 from tqdm import tqdm
 
 from src.data import build_loaders, class_weights, describe, save_splits
 from src.models import build_model
-from src.utils import get_device, load_config, save_json, set_seed
-
-
-@torch.no_grad()
-def predict(model, loader, device):
-    model.eval()
-    ys, ps, probs = [], [], []
-    for x, y, _ in loader:
-        out = torch.softmax(model(x.to(device)), 1)
-        probs.append(out.cpu()); ps.append(out.argmax(1).cpu()); ys.append(y)
-    return torch.cat(ys).numpy(), torch.cat(ps).numpy(), torch.cat(probs).numpy()
-
-
-def plot_confusion(cm, classes, path, title):
-    cmn = cm / cm.sum(1, keepdims=True).clip(min=1)
-    fig, ax = plt.subplots(figsize=(5.5, 4.8))
-    im = ax.imshow(cmn, cmap="Blues", vmin=0, vmax=1)
-    ax.set_xticks(range(len(classes)), classes, rotation=45, ha="right")
-    ax.set_yticks(range(len(classes)), classes)
-    for i in range(len(classes)):
-        for j in range(len(classes)):
-            ax.text(j, i, f"{cmn[i, j]:.2f}", ha="center", va="center",
-                    color="white" if cmn[i, j] > 0.5 else "black", fontsize=8)
-    ax.set_xlabel("Predicted"); ax.set_ylabel("True"); ax.set_title(title)
-    fig.colorbar(im, fraction=0.046); fig.tight_layout(); fig.savefig(path, dpi=200); plt.close(fig)
-
-
-def plot_history(hist: pd.DataFrame, path):
-    fig, axes = plt.subplots(1, 2, figsize=(9, 3.4))
-    axes[0].plot(hist.epoch, hist.train_loss, label="train"); axes[0].plot(hist.epoch, hist.val_loss, label="val")
-    axes[0].set_title("Loss"); axes[0].legend()
-    axes[1].plot(hist.epoch, hist.train_acc, label="train"); axes[1].plot(hist.epoch, hist.val_acc, label="val")
-    axes[1].plot(hist.epoch, hist.val_f1, label="val macro-F1"); axes[1].set_title("Accuracy / F1"); axes[1].legend()
-    for a in axes: a.set_xlabel("epoch")
-    fig.tight_layout(); fig.savefig(path, dpi=200); plt.close(fig)
+from src.runtime import plot_history, predict
+from src.utils import get_device, load_config, set_seed
 
 
 def main():
@@ -126,23 +96,8 @@ def main():
     hist = pd.DataFrame(rows); hist.to_csv(out / "history.csv", index=False)
     plot_history(hist, out / "training_curves.png")
 
-    ckpt = torch.load(out / "best.pt", map_location=device, weights_only=False)
-    model.load_state_dict(ckpt["state_dict"])
-    yt, pt, _ = predict(model, loaders["test"], device)
-    cm = confusion_matrix(yt, pt, labels=list(range(len(classes))))
-    results = {
-        "arch": cfg["arch"], "best_epoch": ckpt["epoch"],
-        "test_accuracy": accuracy_score(yt, pt),
-        "test_macro_f1": f1_score(yt, pt, average="macro"),
-        "test_weighted_f1": f1_score(yt, pt, average="weighted"),
-        "per_class": classification_report(yt, pt, labels=list(range(len(classes))),
-                                           target_names=classes, output_dict=True, zero_division=0),
-        "confusion_matrix": cm.tolist(),
-    }
-    save_json(results, out / "test_results.json")
-    plot_confusion(cm, classes, out / "confusion_matrix.png", f"{cfg['arch']} - test")
-    print(f"TEST acc={results['test_accuracy']:.4f} macroF1={results['test_macro_f1']:.4f} -> {out}")
-
+    print(f"Training finished. Best model (epoch {max(rows, key=lambda r: r['val_f1'])['epoch']}) saved to {out / 'best.pt'}")
+    print(f"Next: python test.py --models {out / 'best.pt'}")
 
 if __name__ == "__main__":
     main()
