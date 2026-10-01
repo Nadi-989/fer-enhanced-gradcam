@@ -1,0 +1,78 @@
+{
+  "folds": [
+    "runs/ckplus48_efficientnet_b0/fold0",
+    "runs/ckplus48_efficientnet_b0/fold1",
+    "runs/ckplus48_efficientnet_b0/fold2",
+    "runs/ckplus48_efficientnet_b0/fold3",
+    "runs/ckplus48_efficientnet_b0/fold4"
+  ],
+  "accuracy_mean": 0.909518773135907,
+  "accuracy_std": 0.040279167967952334,
+  "macro_f1_mean": 0.8694345870093241,
+  "macro_f1_std": 0.060461649266417485,
+  "per_fold_accuracy": [
+    0.8709677419354839,
+    0.9516129032258065,
+    0.8709677419354839,
+    0.9032258064516129,
+    0.9508196721311475
+  ],
+  "per_class_f1_mean": {
+    "angry": 0.7924886877828053,
+    "disgust": 0.9417292562509955,
+    "fear": 0.8234848484848485,
+    "happy": 0.9777188328912467,
+    "sad": 0.7001375095492742,
+    "surprise": 0.9810483870967742
+  },
+  "pooled_confusion_matrix": [
+    [
+      35,
+      4,
+      1,
+      0,
+      5,
+      0
+    ],
+    [
+      2,
+      56,
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      23,
+      1,
+      1,
+      0
+    ],
+    [
+      0,
+      0,
+      2,
+      67,
+      0,
+      0
+    ],
+    [
+      4,
+      0,
+      4,
+      0,
+      20,
+      0
+    ],
+    [
+      1,
+      0,
+      1,
+      0,
+      1,
+      80
+    ]
+  ]
+}

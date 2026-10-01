@@ -123,9 +123,51 @@ Every run folder contains `test_results.json`, `confusion_matrix.png`,
 
 ## Results
 
-Fill in from `cam_summary.md` / `cv_results.json` after running on a GPU with
-ImageNet-pretrained backbones. Preliminary CPU results (ResNet-18 trained from
-scratch, CK+48, 5-fold CV) are in `docs/preliminary_results.md`.
+ImageNet-pretrained backbones, NVIDIA T4 (Google Colab). Full tables for every
+method are in [`results/`](results); figures are in [`docs/figures`](docs/figures).
+
+### Classification (six basic emotions)
+
+| Backbone | FER2013 accuracy | FER2013 macro-F1 | CK+ accuracy (5-fold) | CK+ macro-F1 |
+|---|---|---|---|---|
+| ResNet-18 | 72.80% | 0.686 | 92.25 ± 3.08% | 0.898 ± 0.038 |
+| VGG-16-BN | – | – | **94.51 ± 3.71%** | **0.934 ± 0.048** |
+| EfficientNet-B0 | – | – | 90.95 ± 4.03% | 0.869 ± 0.061 |
+
+### Explanation quality — FER2013, ResNet-18 (1,111 test images)
+
+| Method | Deletion ↓ | Insertion ↑ | Avg. Drop % ↓ | FRCR ↑ | Face energy ↑ | Pointing ↑ | ms/img ↓ |
+|---|---|---|---|---|---|---|---|
+| Grad-CAM | 0.310 | 0.551 | 21.8 | 1.277 | 0.842 | 0.344 | 1.4 |
+| Grad-CAM++ | 0.321 | 0.546 | 23.3 | 1.268 | 0.844 | 0.367 | 1.1 |
+| Layer-CAM | 0.322 | 0.546 | 23.6 | 1.263 | 0.843 | 0.365 | 1.1 |
+| Score-CAM | **0.278** | 0.573 | **14.5** | 1.323 | 0.848 | **0.372** | 149.3 |
+| Eigen-CAM | 0.375 | 0.520 | 56.7 | 1.328 | 0.894 | 0.260 | 13.7 |
+| **MSF-Grad-CAM** | 0.289 | **0.585** | 33.7 | **1.500** | **0.898** | 0.371 | 2.0 |
+
+MSF-Grad-CAM vs Grad-CAM (Wilcoxon signed-rank): better deletion, insertion,
+FRCR and face energy (p < 1e-29 on FER2013; p < 1e-8 on CK+ for all three
+backbones); Average Drop is worse, as expected for compact maps.
+
+### Explanation quality — CK+ (309 images, pooled over 5 folds)
+
+| Backbone | Method | Deletion ↓ | Insertion ↑ | FRCR ↑ | Pointing ↑ |
+|---|---|---|---|---|---|
+| ResNet-18 | Grad-CAM | 0.289 | 0.762 | 1.302 | 0.152 |
+| ResNet-18 | **MSF-Grad-CAM** | **0.257** | **0.779** | **1.631** | **0.505** |
+| VGG-16-BN | Grad-CAM | 0.247 | 0.759 | 2.064 | 0.204 |
+| VGG-16-BN | **MSF-Grad-CAM** | **0.241** | **0.775** | **2.374** | **0.540** |
+| EfficientNet-B0 | Grad-CAM | 0.263 | 0.712 | 1.456 | 0.074 |
+| EfficientNet-B0 | **MSF-Grad-CAM** | **0.245** | **0.723** | **1.764** | **0.479** |
+
+### Randomisation sanity check (FER2013, ResNet-18)
+
+Spearman correlation with the maps of the trained model after the classifier
+head is randomised (lower = more sensitive to the model):
+Grad-CAM 0.24 · **MSF-Grad-CAM 0.31** · Score-CAM 0.80 · Grad-CAM++ 0.94 ·
+Layer-CAM 0.95 · Eigen-CAM 1.00.
+
+<p align="center"><img src="docs/figures/fer2013_qualitative.png" width="70%"></p>
 
 ## Citation
 
